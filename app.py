@@ -1,7 +1,8 @@
 
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import numpy as np
+from pathlib import Path
 
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -10,56 +11,106 @@ from sklearn.impute import SimpleImputer
 from sklearn.ensemble import RandomForestRegressor
 
 
-# ==================================================
+# =====================================================
 # 1. PAGE CONFIGURATION
-# ==================================================
+# =====================================================
 
 st.set_page_config(
-    page_title="AgriSmart Dashboard",
+    page_title="AgriSmart",
     page_icon="🌾",
     layout="wide"
 )
 
 st.title("🌾 AgriSmart")
-st.subheader("Smart Agriculture: Crop Yield and Farmer Profitability")
+st.markdown(
+    "### Smart Agriculture Dashboard"
+)
+st.caption(
+    "Crop Yield Forecasting | Farmer Profitability Prediction"
+)
 
 st.markdown("---")
 
 
-# ==================================================
-# 2. LOAD DATASET
-# ==================================================
-
-
-import os
-import streamlit as st
-import pandas as pd
+# =====================================================
+# 2. AUTOMATIC DATASET DETECTION
+# =====================================================
 
 @st.cache_data
 def load_data():
 
-    file_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "india_rainfall_crop_yield_2014_2024(2).csv"
-    )
+    base_folder = Path(__file__).resolve().parent
 
-    if not os.path.exists(file_path):
-        st.error(
-            "Dataset not found! Please upload "
-            "india_rainfall_crop_yield_2014_2024(2).csv "
-            "to the same GitHub folder as app.py."
+    # Search project folder and its subfolders
+    csv_files = list(base_folder.rglob("*.csv"))
+
+    if not csv_files:
+        st.error("No CSV dataset found in the project.")
+        st.info(
+            "Upload your crop yield CSV file to GitHub "
+            "in the same folder as app.py or inside a data folder."
         )
         st.stop()
 
-    return pd.read_csv(file_path)
+    # Identify the required dataset by filename
+    matching_files = [
+        file for file in csv_files
+        if (
+            "rainfall" in file.name.lower()
+            or "crop" in file.name.lower()
+            or "yield" in file.name.lower()
+        )
+    ]
 
-df = load_data()
+    if len(matching_files) == 1:
+        selected_file = matching_files[0]
+
+    elif len(matching_files) > 1:
+        preferred = [
+            file for file in matching_files
+            if "rainfall" in file.name.lower()
+            and "crop" in file.name.lower()
+            and "yield" in file.name.lower()
+        ]
+
+        if len(preferred) == 1:
+            selected_file = preferred[0]
+        else:
+            st.error("Multiple possible crop datasets were found.")
+            selected_file = st.selectbox(
+                "Select your dataset",
+                matching_files,
+                format_func=lambda x: str(x.relative_to(base_folder))
+            )
+
+    elif len(csv_files) == 1:
+        selected_file = csv_files[0]
+
+    else:
+        st.error("Unable to identify the crop yield dataset.")
+        st.write("Available CSV files:")
+        for file in csv_files:
+            st.write(str(file.relative_to(base_folder)))
+        st.stop()
+
+    data = pd.read_csv(selected_file)
+    return data, str(selected_file.name)
 
 
-# Clean column names
+df, dataset_name = load_data()
+
 df.columns = df.columns.str.strip()
 
-# Required columns
+# Remove completely empty rows
+df = df.dropna(how="all")
+
+st.sidebar.success(f"Dataset loaded: {dataset_name}")
+
+
+# =====================================================
+# 3. CHECK REQUIRED COLUMNS
+# =====================================================
+
 required_columns = [
     "State",
     "Season",
@@ -78,22 +129,26 @@ required_columns = [
 ]
 
 missing_columns = [
-    col for col in required_columns if col not in df.columns
+    col for col in required_columns
+    if col not in df.columns
 ]
 
 if missing_columns:
-    st.error(f"Missing dataset columns: {missing_columns}")
+    st.error(
+        "The dataset is missing these columns: "
+        + ", ".join(missing_columns)
+    )
     st.stop()
 
 
-# ==================================================
-# 3. SIDEBAR NAVIGATION
-# ==================================================
+# =====================================================
+# 4. SIDEBAR NAVIGATION
+# =====================================================
 
-st.sidebar.title("🌾 AgriSmart Menu")
+st.sidebar.title("🌾 AgriSmart")
 
 page = st.sidebar.radio(
-    "Select Dashboard",
+    "Navigation",
     [
         "Dashboard Overview",
         "Crop Analysis",
@@ -103,12 +158,12 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.caption("AgriSmart | Smart Agriculture")
+st.sidebar.caption("Smart Agriculture System")
 
 
-# ==================================================
-# 4. FEATURES FOR MACHINE LEARNING
-# ==================================================
+# =====================================================
+# 5. MACHINE LEARNING FEATURES
+# =====================================================
 
 categorical_features = [
     "State",
@@ -128,9 +183,9 @@ numeric_features = [
 ]
 
 
-# ==================================================
-# 5. MODEL TRAINING FUNCTION
-# ==================================================
+# =====================================================
+# 6. MACHINE LEARNING MODEL
+# =====================================================
 
 @st.cache_resource
 def train_model(target):
@@ -138,10 +193,26 @@ def train_model(target):
     features = categorical_features + numeric_features
 
     if target == "Farmer_Profit_INR":
-        features = features + ["Yield_ton_per_hectare"]
+        features.append("Yield_ton_per_hectare")
 
-    X = df[features]
-    y = df[target]
+    X = df[features].copy()
+    y = pd.to_numeric(df[target], errors="coerce")
+
+    # Remove rows with missing target values
+    valid_rows = y.notna()
+
+    X = X.loc[valid_rows]
+    y = y.loc[valid_rows]
+
+    # Ensure numerical columns are numeric
+    for col in numeric_features:
+        X[col] = pd.to_numeric(X[col], errors="coerce")
+
+    if target == "Farmer_Profit_INR":
+        X["Yield_ton_per_hectare"] = pd.to_numeric(
+            X["Yield_ton_per_hectare"],
+            errors="coerce"
+        )
 
     categorical = [
         col for col in features
@@ -202,37 +273,37 @@ def train_model(target):
     return model, features
 
 
-# ==================================================
-# 6. PREDICTION INPUT FUNCTION
-# ==================================================
+# =====================================================
+# 7. PREDICTION INPUT FUNCTION
+# =====================================================
 
 def prediction_inputs(include_yield=False):
 
     values = {}
 
-    st.markdown("### Farming Information")
+    st.subheader("Farming Information")
 
     col1, col2 = st.columns(2)
 
     with col1:
 
         values["State"] = st.selectbox(
-            "Select State",
+            "State",
             sorted(df["State"].dropna().unique())
         )
 
         values["Crop_Type"] = st.selectbox(
-            "Select Crop",
+            "Crop",
             sorted(df["Crop_Type"].dropna().unique())
         )
 
         values["Season"] = st.selectbox(
-            "Select Season",
+            "Season",
             sorted(df["Season"].dropna().unique())
         )
 
         values["Soil_Type"] = st.selectbox(
-            "Select Soil Type",
+            "Soil Type",
             sorted(df["Soil_Type"].dropna().unique())
         )
 
@@ -262,13 +333,13 @@ def prediction_inputs(include_yield=False):
         )
 
         values["Fertilizer_Used_kg"] = st.number_input(
-            "Fertilizer Used (kg)",
+            "Fertilizer (kg)",
             min_value=0.0,
             value=200.0
         )
 
         values["Pesticide_Used_kg"] = st.number_input(
-            "Pesticide Used (kg)",
+            "Pesticide (kg)",
             min_value=0.0,
             value=10.0
         )
@@ -282,7 +353,7 @@ def prediction_inputs(include_yield=False):
         if include_yield:
 
             values["Yield_ton_per_hectare"] = st.number_input(
-                "Expected Crop Yield (tons/hectare)",
+                "Expected Yield (tons/hectare)",
                 min_value=0.0,
                 value=4.8
             )
@@ -290,9 +361,9 @@ def prediction_inputs(include_yield=False):
     return values
 
 
-# ==================================================
-# 7. DASHBOARD OVERVIEW
-# ==================================================
+# =====================================================
+# 8. DASHBOARD OVERVIEW
+# =====================================================
 
 if page == "Dashboard Overview":
 
@@ -317,14 +388,14 @@ if page == "Dashboard Overview":
 
     col4.metric(
         "Years Covered",
-        f"{df['Year'].min():.0f}–{df['Year'].max():.0f}"
+        f"{df['Year'].min():.0f} - {df['Year'].max():.0f}"
     )
 
     st.markdown("---")
 
-    left, right = st.columns(2)
+    col1, col2 = st.columns(2)
 
-    with left:
+    with col1:
 
         st.subheader("Crop-wise Average Yield")
 
@@ -334,7 +405,7 @@ if page == "Dashboard Overview":
 
         st.bar_chart(crop_yield)
 
-    with right:
+    with col2:
 
         st.subheader("Year-wise Crop Yield")
 
@@ -346,6 +417,30 @@ if page == "Dashboard Overview":
 
     st.markdown("---")
 
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.subheader("State-wise Farmer Profit")
+
+        state_profit = df.groupby("State")[
+            "Farmer_Profit_INR"
+        ].mean().sort_values(ascending=False)
+
+        st.bar_chart(state_profit)
+
+    with col2:
+
+        st.subheader("Season-wise Crop Yield")
+
+        season_yield = df.groupby("Season")[
+            "Yield_ton_per_hectare"
+        ].mean()
+
+        st.bar_chart(season_yield)
+
+    st.markdown("---")
+
     st.subheader("Dataset Preview")
 
     st.dataframe(
@@ -354,9 +449,9 @@ if page == "Dashboard Overview":
     )
 
 
-# ==================================================
-# 8. CROP ANALYSIS
-# ==================================================
+# =====================================================
+# 9. CROP ANALYSIS
+# =====================================================
 
 elif page == "Crop Analysis":
 
@@ -374,6 +469,7 @@ elif page == "Crop Analysis":
     filtered_df = df.copy()
 
     if selected_crop != "All Crops":
+
         filtered_df = filtered_df[
             filtered_df["Crop_Type"] == selected_crop
         ]
@@ -402,7 +498,7 @@ elif page == "Crop Analysis":
 
     st.markdown("---")
 
-    st.subheader("Crop Records")
+    st.subheader("Crop Data")
 
     st.dataframe(
         filtered_df,
@@ -410,16 +506,16 @@ elif page == "Crop Analysis":
     )
 
 
-# ==================================================
-# 9. CROP YIELD PREDICTION
-# ==================================================
+# =====================================================
+# 10. CROP YIELD PREDICTION
+# =====================================================
 
 elif page == "Crop Yield Prediction":
 
     st.header("🌾 Crop Yield Prediction")
 
     st.write(
-        "Predict crop yield using weather conditions "
+        "Estimate crop yield using weather conditions "
         "and farming information."
     )
 
@@ -427,12 +523,13 @@ elif page == "Crop Yield Prediction":
         "Yield_ton_per_hectare"
     )
 
-    with st.form("yield_prediction_form"):
+    with st.form("yield_form"):
 
         inputs = prediction_inputs()
 
         submitted = st.form_submit_button(
-            "Predict Crop Yield"
+            "Predict Crop Yield",
+            use_container_width=True
         )
 
     if submitted:
@@ -442,7 +539,6 @@ elif page == "Crop Yield Prediction":
         prediction = model.predict(input_df)[0]
 
         st.markdown("---")
-
         st.subheader("Prediction Result")
 
         st.success(
@@ -450,9 +546,9 @@ elif page == "Crop Yield Prediction":
         )
 
 
-# ==================================================
-# 10. FARMER PROFITABILITY PREDICTION
-# ==================================================
+# =====================================================
+# 11. FARMER PROFITABILITY PREDICTION
+# =====================================================
 
 elif page == "Farmer Profitability Prediction":
 
@@ -467,14 +563,15 @@ elif page == "Farmer Profitability Prediction":
         "Farmer_Profit_INR"
     )
 
-    with st.form("profit_prediction_form"):
+    with st.form("profit_form"):
 
         inputs = prediction_inputs(
             include_yield=True
         )
 
         submitted = st.form_submit_button(
-            "Predict Farmer Profit"
+            "Predict Farmer Profit",
+            use_container_width=True
         )
 
     if submitted:
@@ -484,7 +581,6 @@ elif page == "Farmer Profitability Prediction":
         prediction = model.predict(input_df)[0]
 
         st.markdown("---")
-
         st.subheader("Prediction Result")
 
         st.success(
@@ -492,13 +588,13 @@ elif page == "Farmer Profitability Prediction":
         )
 
 
-# ==================================================
-# 11. FOOTER
-# ==================================================
+# =====================================================
+# 12. FOOTER
+# =====================================================
 
 st.markdown("---")
 
 st.caption(
-    "AgriSmart | Crop Yield Forecasting "
-    "and Farmer Profitability Prediction"
+    "AgriSmart | Smart Agriculture Dashboard | "
+    "Crop Yield and Farmer Profitability"
 )
