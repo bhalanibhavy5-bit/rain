@@ -12,6 +12,7 @@ from sklearn.svm import SVR,SVC
 from sklearn.neighbors import KNeighborsRegressor,KNeighborsClassifier
 from sklearn.neural_network import MLPRegressor,MLPClassifier
 from sklearn.metrics import mean_absolute_error,mean_squared_error,r2_score,accuracy_score,f1_score
+from sklearn.compose import ColumnTransformer
 
 st.set_page_config(page_title="AgriSmart Crop Yield",page_icon="🌾",layout="wide")
 st.title("🌾 AgriSmart — Rainfall & Crop Yield Prediction")
