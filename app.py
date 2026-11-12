@@ -4,49 +4,37 @@ import pandas as pd
 import numpy as np
 
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler, LabelEncoder
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.dummy import DummyRegressor
 
-from sklearn.linear_model import (
-    LinearRegression, Lasso, Ridge, LogisticRegression
-)
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
-from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
-from sklearn.svm import SVR, SVC
-from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
-from sklearn.neural_network import MLPRegressor, MLPClassifier
+from sklearn.linear_model import LinearRegression, Lasso, Ridge
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.svm import SVR
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neural_network import MLPRegressor
 
-from sklearn.metrics import (
-    mean_absolute_error,
-    mean_squared_error,
-    r2_score,
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score
-)
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# --------------------------------------------------
-# 1. STREAMLIT CONFIGURATION
-# --------------------------------------------------
+# ==========================================
+# 1. APPLICATION CONFIGURATION
+# ==========================================
 
 st.set_page_config(
-    page_title="AgriSmart - AI Agriculture",
+    page_title="AgriSmart - Agricultural Forecasting",
     page_icon="🌾",
     layout="wide"
 )
 
 st.title("🌾 AgriSmart")
-st.subheader("AI-Based Crop Yield & Farmer Profitability Prediction")
+st.subheader("Crop Yield Forecasting & Farmer Profitability Prediction")
 
 st.write(
-    "An intelligent agricultural prediction system "
-    "using Machine Learning algorithms."
+    "An AI-powered agricultural forecasting system "
+    "using Machine Learning."
 )
-
-st.sidebar.title("AgriSmart Navigation")
 
 uploaded_file = st.sidebar.file_uploader(
     "Upload Agricultural Dataset",
@@ -59,9 +47,9 @@ if uploaded_file is None:
 
 df = pd.read_csv(uploaded_file)
 
-# --------------------------------------------------
-# 2. DATASET VALIDATION
-# --------------------------------------------------
+# ==========================================
+# 2. DATA VALIDATION
+# ==========================================
 
 YIELD = "Yield_ton_per_hectare"
 PROFIT = "Farmer_Profit_INR"
@@ -76,68 +64,83 @@ required_columns = [
     YIELD, "Market_Price_per_ton", PROFIT
 ]
 
-missing = [c for c in required_columns if c not in df.columns]
+missing = [
+    col for col in required_columns
+    if col not in df.columns
+]
 
 if missing:
     st.error("Missing columns: " + ", ".join(missing))
     st.stop()
 
-df = df.dropna(subset=[YIELD, PROFIT, "Year"]).copy()
+df = df.dropna(
+    subset=[YIELD, PROFIT, "Year"]
+).copy()
 
-# --------------------------------------------------
+if len(df) < 30:
+    st.error("Insufficient data for model training.")
+    st.stop()
+
+# ==========================================
 # 3. DATASET OVERVIEW
-# --------------------------------------------------
+# ==========================================
 
 st.header("1. Agricultural Dataset Overview")
 
-col1, col2, col3, col4 = st.columns(4)
+c1, c2, c3, c4 = st.columns(4)
 
-col1.metric("Total Records", f"{len(df):,}")
-col2.metric("Total Features", len(df.columns))
-col3.metric("Missing Values", int(df.isnull().sum().sum()))
-col4.metric(
+c1.metric("Total Records", f"{len(df):,}")
+c2.metric("Total Features", len(df.columns))
+c3.metric(
+    "Missing Values",
+    f"{df.isnull().sum().sum():,}"
+)
+c4.metric(
     "Year Range",
     f"{int(df.Year.min())}-{int(df.Year.max())}"
 )
 
-st.dataframe(df.head(20), use_container_width=True)
+with st.expander("View Dataset"):
+    st.dataframe(df.head(30), use_container_width=True)
 
-with st.expander("View Statistical Summary"):
-    st.write(df.describe(include="all"))
+with st.expander("Statistical Summary"):
+    st.dataframe(df.describe(include="all"))
 
-with st.expander("View Missing Values"):
-    st.write(df.isnull().sum())
-
-# --------------------------------------------------
+# ==========================================
 # 4. FEATURE SELECTION
-# --------------------------------------------------
+# ==========================================
 
-# Exclude ID and target variables from yield features.
+# Remove ID and both target variables
 base_features = [
-    c for c in df.columns
-    if c not in ["Record_ID", YIELD, PROFIT]
+    col for col in df.columns
+    if col not in ["Record_ID", YIELD, PROFIT]
 ]
 
-yield_features = base_features
+# Crop yield predictors
+yield_features = base_features.copy()
 
-# Yield is included because profitability depends
-# on actual or expected crop production.
+# Profit predictors include expected/observed yield
 profit_features = base_features + [YIELD]
 
-# --------------------------------------------------
-# 5. TRAIN AND TEST DATA
-# --------------------------------------------------
+# ==========================================
+# 5. TRAIN TEST SPLIT
+# ==========================================
 
 if df["Year"].nunique() >= 2:
 
     latest_year = df["Year"].max()
 
-    train = df[df["Year"] < latest_year].copy()
-    test = df[df["Year"] == latest_year].copy()
+    train = df[
+        df["Year"] < latest_year
+    ].copy()
 
-    split_message = (
-        f"Training data: Years before {latest_year} | "
-        f"Testing data: {latest_year}"
+    test = df[
+        df["Year"] == latest_year
+    ].copy()
+
+    st.info(
+        f"Training: Years before {latest_year} | "
+        f"Testing: {latest_year}"
     )
 
 else:
@@ -150,17 +153,13 @@ else:
         random_state=42
     )
 
-    split_message = "Random 80:20 train-test split"
-
 if len(train) < 20 or len(test) < 5:
-    st.error("Insufficient data for model evaluation.")
+    st.error("Insufficient training or testing records.")
     st.stop()
 
-st.info(split_message)
-
-# --------------------------------------------------
+# ==========================================
 # 6. DATA PREPROCESSING
-# --------------------------------------------------
+# ==========================================
 
 def create_preprocessor(features):
 
@@ -169,8 +168,8 @@ def create_preprocessor(features):
     ).columns.tolist()
 
     numerical = [
-        c for c in features
-        if c not in categorical
+        col for col in features
+        if col not in categorical
     ]
 
     categorical_pipeline = Pipeline([
@@ -183,19 +182,16 @@ def create_preprocessor(features):
         ("scaler", StandardScaler())
     ])
 
-    preprocessor = ColumnTransformer([
-        ("categorical", categorical_pipeline, categorical),
-        ("numerical", numerical_pipeline, numerical)
+    return ColumnTransformer([
+        ("cat", categorical_pipeline, categorical),
+        ("num", numerical_pipeline, numerical)
     ])
 
-    return preprocessor
+# ==========================================
+# 7. MACHINE LEARNING MODELS
+# ==========================================
 
-
-# --------------------------------------------------
-# 7. REGRESSION MODELS
-# --------------------------------------------------
-
-regression_models = {
+models = {
 
     "Linear Regression":
         LinearRegression(),
@@ -241,17 +237,16 @@ regression_models = {
         Ridge(alpha=10)
 }
 
+# ==========================================
+# 8. MODEL EVALUATION FUNCTION
+# ==========================================
 
-# --------------------------------------------------
-# 8. REGRESSION MODEL EVALUATION
-# --------------------------------------------------
-
-def evaluate_regression(target, features):
+def evaluate_models(target, features):
 
     results = []
     trained_models = {}
 
-    for name, model in regression_models.items():
+    for name, model in models.items():
 
         pipeline = Pipeline([
             ("preprocessing", create_preprocessor(features)),
@@ -288,7 +283,8 @@ def evaluate_regression(target, features):
             )
         })
 
-    # Baseline model
+    # Baseline comparison
+
     baseline = DummyRegressor(strategy="mean")
 
     baseline.fit(
@@ -296,17 +292,17 @@ def evaluate_regression(target, features):
         train[target]
     )
 
-    baseline_predictions = baseline.predict(
+    baseline_pred = baseline.predict(
         test[features]
     )
 
     baseline_mae = mean_absolute_error(
-        test[target], baseline_predictions
+        test[target], baseline_pred
     )
 
     baseline_rmse = np.sqrt(
         mean_squared_error(
-            test[target], baseline_predictions
+            test[target], baseline_pred
         )
     )
 
@@ -325,38 +321,35 @@ def evaluate_regression(target, features):
 
         best_name = best["Model"]
         best_model = trained_models[best_name]
-        beats_baseline = True
+        valid = True
 
     else:
 
         best_name = "Mean Baseline"
         best_model = baseline
-        beats_baseline = False
+        valid = False
 
-    return (
-        results_df,
-        best_model,
-        best_name,
-        beats_baseline
-    )
+    return results_df, best_model, best_name, valid
 
 
-# --------------------------------------------------
-# 9. CROP YIELD PREDICTION MODELS
-# --------------------------------------------------
+# ==========================================
+# 9. CROP YIELD FORECASTING
+# ==========================================
 
-st.header("2. Crop Yield Prediction")
+st.divider()
 
-with st.spinner("Training crop yield models..."):
+st.header("2. Crop Yield Forecasting")
+
+with st.spinner("Training Crop Yield Models..."):
 
     yield_results, yield_model, yield_best, yield_valid = (
-        evaluate_regression(
+        evaluate_models(
             YIELD,
             yield_features
         )
     )
 
-st.subheader("Yield Regression Performance")
+st.subheader("Crop Yield Model Performance")
 
 st.dataframe(
     yield_results,
@@ -364,7 +357,9 @@ st.dataframe(
     hide_index=True
 )
 
-st.success(f"Selected Yield Model: {yield_best}")
+st.success(
+    f"Selected Yield Model: {yield_best}"
+)
 
 if not yield_valid:
     st.warning(
@@ -372,22 +367,24 @@ if not yield_valid:
         "on both MAE and RMSE."
     )
 
-# --------------------------------------------------
-# 10. PROFITABILITY PREDICTION MODELS
-# --------------------------------------------------
+# ==========================================
+# 10. FARMER PROFITABILITY PREDICTION
+# ==========================================
+
+st.divider()
 
 st.header("3. Farmer Profitability Prediction")
 
-with st.spinner("Training profitability models..."):
+with st.spinner("Training Profitability Models..."):
 
     profit_results, profit_model, profit_best, profit_valid = (
-        evaluate_regression(
+        evaluate_models(
             PROFIT,
             profit_features
         )
     )
 
-st.subheader("Profitability Regression Performance")
+st.subheader("Profitability Model Performance")
 
 st.dataframe(
     profit_results,
@@ -395,7 +392,9 @@ st.dataframe(
     hide_index=True
 )
 
-st.success(f"Selected Profit Model: {profit_best}")
+st.success(
+    f"Selected Profitability Model: {profit_best}"
+)
 
 if not profit_valid:
     st.warning(
@@ -403,171 +402,11 @@ if not profit_valid:
         "on both MAE and RMSE."
     )
 
-# --------------------------------------------------
-# 11. CLASSIFICATION MODELS
-# --------------------------------------------------
+# ==========================================
+# 11. PREDICTION INPUT FUNCTION
+# ==========================================
 
-st.header("4. Crop Yield Classification")
-
-# Training-only thresholds
-q1, q2 = train[YIELD].quantile(
-    [1/3, 2/3]
-).tolist()
-
-class_labels = ["Low", "Medium", "High"]
-
-def create_yield_classes(values):
-
-    return pd.cut(
-        values,
-        bins=[-np.inf, q1, q2, np.inf],
-        labels=class_labels,
-        include_lowest=True
-    ).astype(str)
-
-
-label_encoder = LabelEncoder()
-
-y_train = label_encoder.fit_transform(
-    create_yield_classes(train[YIELD])
-)
-
-y_test = label_encoder.transform(
-    create_yield_classes(test[YIELD])
-)
-
-classification_models = {
-
-    "Logistic Regression":
-        LogisticRegression(
-            max_iter=2000,
-            class_weight="balanced"
-        ),
-
-    "Random Forest":
-        RandomForestClassifier(
-            n_estimators=300,
-            min_samples_leaf=2,
-            class_weight="balanced",
-            random_state=42,
-            n_jobs=-1
-        ),
-
-    "Decision Tree":
-        DecisionTreeClassifier(
-            min_samples_leaf=5,
-            class_weight="balanced",
-            random_state=42
-        ),
-
-    "Support Vector Machine":
-        SVC(
-            C=2,
-            class_weight="balanced"
-        ),
-
-    "KNN":
-        KNeighborsClassifier(
-            n_neighbors=9,
-            weights="distance"
-        ),
-
-    "ANN (MLP)":
-        MLPClassifier(
-            hidden_layer_sizes=(100, 50),
-            max_iter=700,
-            early_stopping=True,
-            random_state=42
-        )
-}
-
-
-classification_results = []
-classification_pipelines = {}
-
-for name, model in classification_models.items():
-
-    pipeline = Pipeline([
-        ("preprocessing", create_preprocessor(yield_features)),
-        ("model", model)
-    ])
-
-    pipeline.fit(
-        train[yield_features],
-        y_train
-    )
-
-    predictions = pipeline.predict(
-        test[yield_features]
-    )
-
-    classification_pipelines[name] = pipeline
-
-    classification_results.append({
-
-        "Model": name,
-
-        "Accuracy": accuracy_score(
-            y_test, predictions
-        ),
-
-        "Precision": precision_score(
-            y_test,
-            predictions,
-            average="macro",
-            zero_division=0
-        ),
-
-        "Recall": recall_score(
-            y_test,
-            predictions,
-            average="macro",
-            zero_division=0
-        ),
-
-        "F1 Score": f1_score(
-            y_test,
-            predictions,
-            average="macro",
-            zero_division=0
-        )
-    })
-
-
-classification_df = pd.DataFrame(
-    classification_results
-).sort_values(
-    ["F1 Score", "Accuracy"],
-    ascending=False
-).reset_index(drop=True)
-
-best_classifier_name = classification_df.iloc[0]["Model"]
-
-best_classifier = classification_pipelines[
-    best_classifier_name
-]
-
-st.dataframe(
-    classification_df,
-    use_container_width=True,
-    hide_index=True
-)
-
-st.success(
-    f"Best Classification Model: {best_classifier_name}"
-)
-
-st.write(
-    f"Yield categories: Low ≤ {q1:.2f}, "
-    f"Medium ≤ {q2:.2f}, High > {q2:.2f}"
-)
-
-
-# --------------------------------------------------
-# 12. INTERACTIVE PREDICTION INPUTS
-# --------------------------------------------------
-
-def create_input_form(features, form_key):
+def prediction_form(features, form_key):
 
     values = {}
 
@@ -575,65 +414,64 @@ def create_input_form(features, form_key):
 
         left, right = st.columns(2)
 
-        for i, column in enumerate(features):
+        for i, col in enumerate(features):
 
             container = left if i % 2 == 0 else right
 
             with container:
 
                 if (
-                    df[column].dtype == "object"
-                    or str(df[column].dtype) == "category"
+                    df[col].dtype == "object"
+                    or str(df[col].dtype) == "category"
                 ):
 
                     options = sorted(
-                        df[column]
-                        .dropna()
-                        .astype(str)
-                        .unique()
-                        .tolist()
+                        df[col].dropna().astype(str).unique()
                     )
 
-                    values[column] = st.selectbox(
-                        column,
+                    values[col] = st.selectbox(
+                        col,
                         options,
-                        key=form_key + column
+                        key=form_key + col
                     )
 
                 else:
 
                     series = pd.to_numeric(
-                        df[column],
-                        errors="coerce"
+                        df[col], errors="coerce"
                     ).dropna()
 
-                    values[column] = st.number_input(
-                        column,
+                    values[col] = st.number_input(
+                        col,
                         value=float(series.median()),
                         min_value=float(series.min()),
                         max_value=float(series.max()),
-                        key=form_key + column
+                        key=form_key + col
                     )
 
-        submitted = st.form_submit_button(
+        submit = st.form_submit_button(
             "Generate Prediction",
             type="primary"
         )
 
-    return values, submitted
+    return values, submit
 
-
-# --------------------------------------------------
-# 13. YIELD PREDICTION
-# --------------------------------------------------
+# ==========================================
+# 12. CROP YIELD PREDICTION INTERFACE
+# ==========================================
 
 st.divider()
 
-st.header("5. Predict Crop Yield")
+st.header("4. Forecast Crop Yield")
 
-yield_values, yield_submit = create_input_form(
+st.write(
+    "Enter agricultural and climatic parameters "
+    "to estimate expected crop production."
+)
+
+yield_values, yield_submit = prediction_form(
     yield_features,
-    "yield_form"
+    "yield_prediction"
 )
 
 if yield_submit:
@@ -647,44 +485,34 @@ if yield_submit:
         yield_model.predict(input_data)[0]
     )
 
-    predicted_class = label_encoder.inverse_transform(
-        best_classifier.predict(input_data).astype(int)
-    )[0]
-
-    col1, col2 = st.columns(2)
-
-    col1.metric(
-        "Predicted Crop Yield",
-        f"{prediction:.2f} ton/hectare"
-    )
-
-    col2.metric(
-        "Yield Category",
-        predicted_class
+    st.metric(
+        "Forecasted Crop Yield",
+        f"{prediction:.2f} Ton/Hectare"
     )
 
     if not yield_valid:
         st.caption(
-            "The selected yield estimate is the mean baseline."
+            "This estimate uses the mean baseline because "
+            "no tested ML model beat it."
         )
 
-
-# --------------------------------------------------
-# 14. PROFITABILITY PREDICTION
-# --------------------------------------------------
+# ==========================================
+# 13. PROFITABILITY PREDICTION INTERFACE
+# ==========================================
 
 st.divider()
 
-st.header("6. Predict Farmer Profitability")
+st.header("5. Forecast Farmer Profitability")
 
-st.info(
-    "Enter an expected or observed crop yield. "
-    "For pre-harvest estimates, use expected yield."
+st.write(
+    "Enter agricultural information, market price, "
+    "cultivated area and expected crop yield to "
+    "estimate farmer profitability."
 )
 
-profit_values, profit_submit = create_input_form(
+profit_values, profit_submit = prediction_form(
     profit_features,
-    "profit_form"
+    "profit_prediction"
 )
 
 if profit_submit:
@@ -694,34 +522,38 @@ if profit_submit:
         columns=profit_features
     )
 
-    profit_prediction = float(
+    prediction = float(
         profit_model.predict(input_data)[0]
     )
 
     st.metric(
-        "Estimated Farmer Profit",
-        f"₹ {profit_prediction:,.2f}"
+        "Forecasted Farmer Profit",
+        f"₹ {prediction:,.2f}"
     )
 
     if not profit_valid:
         st.caption(
-            "The selected profit estimate is the mean baseline."
+            "This estimate uses the mean baseline because "
+            "no tested ML model beat it."
         )
 
-
-# --------------------------------------------------
-# 15. FINAL INFORMATION
-# --------------------------------------------------
+# ==========================================
+# 14. FOOTER
+# ==========================================
 
 st.divider()
 
-st.subheader("About AgriSmart")
+st.markdown(
+    """
+    ### About AgriSmart
 
-st.write(
-    "AgriSmart uses machine learning to analyse "
-    "agricultural conditions, estimate crop yield, "
-    "classify yield performance and predict farmer "
-    "profitability. Predictions should be validated "
-    "with independent agricultural data before "
-    "being used for actual farming or financial decisions."
+    AgriSmart is an AI-powered agricultural forecasting
+    platform designed to predict crop yield and farmer
+    profitability using historical agricultural data
+    and machine learning algorithms.
+
+    **Prediction Objectives:**
+    1. Crop Yield Forecasting
+    2. Farmer Profitability Prediction
+    """
 )
