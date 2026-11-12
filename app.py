@@ -1,6 +1,7 @@
 
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 from pathlib import Path
 
 from sklearn.compose import ColumnTransformer
@@ -23,13 +24,12 @@ st.set_page_config(
 
 
 # =====================================================
-# 2. PROFESSIONAL UI STYLING
+# 2. PROFESSIONAL UI DESIGN
 # =====================================================
 
 st.markdown("""
 <style>
 
-/* Main background */
 .stApp {
     background-color: #F5F8F5;
 }
@@ -39,7 +39,6 @@ st.markdown("""
     padding: 2rem 2.5rem 3rem 2.5rem;
 }
 
-/* Main headings */
 h1 {
     color: #17452D !important;
     font-size: 2.2rem !important;
@@ -64,6 +63,7 @@ p {
 }
 
 /* Sidebar */
+
 [data-testid="stSidebar"] {
     background-color: #173F2C;
     min-width: 270px;
@@ -77,13 +77,8 @@ p {
     border-color: #65836E !important;
 }
 
-/* Sidebar radio buttons */
-[data-testid="stSidebar"] [data-testid="stRadio"] label {
-    font-size: 1rem !important;
-    font-weight: 600 !important;
-}
+/* Metrics */
 
-/* Metric cards */
 [data-testid="stMetric"] {
     background: #FFFFFF;
     border: 1px solid #DCE7DD;
@@ -106,7 +101,8 @@ p {
     font-weight: 800 !important;
 }
 
-/* Prediction forms */
+/* Forms */
+
 [data-testid="stForm"] {
     background: #FFFFFF;
     border: 1px solid #DCE7DD;
@@ -115,7 +111,8 @@ p {
     box-shadow: 0 2px 8px rgba(25,65,40,0.04);
 }
 
-/* Input labels */
+/* Inputs */
+
 .stSelectbox label,
 .stNumberInput label {
     color: #254B31 !important;
@@ -124,6 +121,7 @@ p {
 }
 
 /* Buttons */
+
 .stButton > button,
 .stFormSubmitButton > button {
     background-color: #246B42;
@@ -142,17 +140,20 @@ p {
 }
 
 /* Tables */
+
 [data-testid="stDataFrame"] {
     border: 1px solid #DCE7DD;
     border-radius: 9px;
 }
 
 /* Alerts */
+
 [data-testid="stAlert"] {
     border-radius: 9px;
 }
 
 /* Dividers */
+
 hr {
     border-color: #DCE5DD !important;
     margin-top: 1.5rem;
@@ -160,6 +161,7 @@ hr {
 }
 
 /* Responsive */
+
 @media (max-width: 768px) {
     .block-container {
         padding: 1rem;
@@ -174,7 +176,6 @@ hr {
     }
 }
 
-/* Footer */
 footer {
     visibility: hidden;
 }
@@ -262,7 +263,113 @@ numeric_features = [
 
 
 # =====================================================
-# 5. SIDEBAR NAVIGATION
+# 5. CUSTOM GRAPH FUNCTIONS
+# =====================================================
+
+def create_bar_chart(data, title, color="#237A45"):
+
+    fig = px.bar(
+        x=data.index.astype(str),
+        y=data.values,
+        labels={
+            "x": data.index.name or "Category",
+            "y": data.name or "Value"
+        },
+        title=title,
+        color_discrete_sequence=[color]
+    )
+
+    fig.update_traces(
+        marker_line_width=0,
+        texttemplate="%{y:,.2f}",
+        textposition="outside",
+        cliponaxis=False
+    )
+
+    fig.update_layout(
+        height=400,
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        font=dict(
+            family="Arial",
+            size=13,
+            color="#263C2D"
+        ),
+        title_font=dict(
+            size=19,
+            color="#17452D"
+        ),
+        showlegend=False,
+        margin=dict(l=25, r=25, t=75, b=50),
+        xaxis=dict(
+            showgrid=False,
+            title_font=dict(size=13)
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor="#E8EEE9",
+            title_font=dict(size=13)
+        )
+    )
+
+    return fig
+
+
+def create_line_chart(data, title, color="#239B9B"):
+
+    fig = px.line(
+        x=data.index,
+        y=data.values,
+        labels={
+            "x": data.index.name or "Year",
+            "y": data.name or "Value"
+        },
+        title=title
+    )
+
+    fig.update_traces(
+        line=dict(
+            color=color,
+            width=3
+        ),
+        mode="lines+markers",
+        marker=dict(
+            size=9,
+            color=color,
+            line=dict(
+                color="white",
+                width=2
+            )
+        )
+    )
+
+    fig.update_layout(
+        height=400,
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        font=dict(
+            family="Arial",
+            size=13,
+            color="#263C2D"
+        ),
+        title_font=dict(
+            size=19,
+            color="#17452D"
+        ),
+        showlegend=False,
+        margin=dict(l=25, r=25, t=75, b=50),
+        xaxis=dict(showgrid=False),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor="#E8EEE9"
+        )
+    )
+
+    return fig
+
+
+# =====================================================
+# 6. SIDEBAR NAVIGATION
 # =====================================================
 
 st.sidebar.title("🌾 AgriSmart")
@@ -304,7 +411,7 @@ st.sidebar.caption(
 
 
 # =====================================================
-# 6. MAIN HEADER - NATIVE STREAMLIT
+# 7. MAIN HEADER
 # =====================================================
 
 st.title("🌾 AgriSmart")
@@ -321,7 +428,7 @@ st.divider()
 
 
 # =====================================================
-# 7. MACHINE LEARNING MODEL
+# 8. MACHINE LEARNING MODEL
 # =====================================================
 
 @st.cache_resource
@@ -412,7 +519,7 @@ def train_model(target):
 
 
 # =====================================================
-# 8. PREDICTION INPUT FUNCTION
+# 9. PREDICTION INPUT FUNCTION
 # =====================================================
 
 def get_prediction_inputs(include_yield=False):
@@ -520,7 +627,7 @@ def get_prediction_inputs(include_yield=False):
 
 
 # =====================================================
-# 9. DASHBOARD OVERVIEW
+# 10. DASHBOARD OVERVIEW
 # =====================================================
 
 if page == "Dashboard Overview":
@@ -562,7 +669,14 @@ if page == "Dashboard Overview":
         "Yield_ton_per_hectare"
     ].mean().sort_values(ascending=False)
 
-    st.bar_chart(crop_yield, height=350)
+    st.plotly_chart(
+        create_bar_chart(
+            crop_yield,
+            "Crop-wise Average Yield",
+            "#237A45"
+        ),
+        use_container_width=True
+    )
 
     st.divider()
 
@@ -572,7 +686,14 @@ if page == "Dashboard Overview":
         "Yield_ton_per_hectare"
     ].mean()
 
-    st.line_chart(yearly_yield, height=350)
+    st.plotly_chart(
+        create_line_chart(
+            yearly_yield,
+            "Year-wise Average Crop Yield",
+            "#239B9B"
+        ),
+        use_container_width=True
+    )
 
     st.divider()
 
@@ -582,7 +703,14 @@ if page == "Dashboard Overview":
         "Farmer_Profit_INR"
     ].mean().sort_values(ascending=False)
 
-    st.bar_chart(state_profit, height=350)
+    st.plotly_chart(
+        create_bar_chart(
+            state_profit,
+            "State-wise Average Farmer Profit",
+            "#D9A441"
+        ),
+        use_container_width=True
+    )
 
     st.divider()
 
@@ -592,7 +720,14 @@ if page == "Dashboard Overview":
         "Yield_ton_per_hectare"
     ].mean()
 
-    st.bar_chart(season_yield, height=300)
+    st.plotly_chart(
+        create_bar_chart(
+            season_yield,
+            "Season-wise Average Crop Yield",
+            "#5276A7"
+        ),
+        use_container_width=True
+    )
 
     st.divider()
 
@@ -606,7 +741,7 @@ if page == "Dashboard Overview":
 
 
 # =====================================================
-# 10. CROP ANALYSIS
+# 11. CROP ANALYSIS
 # =====================================================
 
 elif page == "Crop Analysis":
@@ -614,7 +749,7 @@ elif page == "Crop Analysis":
     st.header("Crop Performance Analysis")
 
     st.write(
-        "Analyse crop performance across states and seasons."
+        "Analyse crop performance across different states and seasons."
     )
 
     crop_options = [
@@ -647,7 +782,14 @@ elif page == "Crop Analysis":
             "Yield_ton_per_hectare"
         ].mean().sort_values(ascending=False)
 
-        st.bar_chart(state_yield, height=350)
+        st.plotly_chart(
+            create_bar_chart(
+                state_yield,
+                "State-wise Average Yield",
+                "#237A45"
+            ),
+            use_container_width=True
+        )
 
     with col2:
 
@@ -657,7 +799,14 @@ elif page == "Crop Analysis":
             "Yield_ton_per_hectare"
         ].mean()
 
-        st.bar_chart(season_yield, height=350)
+        st.plotly_chart(
+            create_bar_chart(
+                season_yield,
+                "Season-wise Average Yield",
+                "#5276A7"
+            ),
+            use_container_width=True
+        )
 
     st.divider()
 
@@ -671,7 +820,7 @@ elif page == "Crop Analysis":
 
 
 # =====================================================
-# 11. CROP YIELD FORECASTING
+# 12. CROP YIELD FORECASTING
 # =====================================================
 
 elif page == "Crop Yield Forecasting":
@@ -696,7 +845,7 @@ elif page == "Crop Yield Forecasting":
         st.divider()
 
         submitted = st.form_submit_button(
-            "Forecast Crop Yield",
+            "🌱 Forecast Crop Yield",
             use_container_width=True
         )
 
@@ -730,7 +879,7 @@ elif page == "Crop Yield Forecasting":
 
 
 # =====================================================
-# 12. FARMER PROFITABILITY PREDICTION
+# 13. FARMER PROFITABILITY PREDICTION
 # =====================================================
 
 elif page == "Farmer Profitability Prediction":
@@ -756,7 +905,7 @@ elif page == "Farmer Profitability Prediction":
         st.divider()
 
         submitted = st.form_submit_button(
-            "Predict Farmer Profit",
+            "💰 Predict Farmer Profit",
             use_container_width=True
         )
 
@@ -790,7 +939,7 @@ elif page == "Farmer Profitability Prediction":
 
 
 # =====================================================
-# 13. FOOTER
+# 14. FOOTER
 # =====================================================
 
 st.divider()
