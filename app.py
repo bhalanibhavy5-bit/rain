@@ -23,15 +23,15 @@ st.set_page_config(
 
 
 # =====================================================
-# 2. CLEAN AND READABLE UI DESIGN
+# 2. PROFESSIONAL UI STYLING
 # =====================================================
 
 st.markdown("""
 <style>
 
-/* Overall background and content width */
+/* Main background */
 .stApp {
-    background-color: #F7F9F7;
+    background-color: #F5F8F5;
 }
 
 .block-container {
@@ -58,10 +58,9 @@ h3 {
     font-weight: 700 !important;
 }
 
-p, li {
+p {
     color: #35483A;
-    font-size: 1rem;
-    line-height: 1.65;
+    line-height: 1.6;
 }
 
 /* Sidebar */
@@ -74,14 +73,14 @@ p, li {
     color: #FFFFFF !important;
 }
 
-[data-testid="stSidebar"] [data-testid="stRadio"] label,
-[data-testid="stSidebar"] [data-testid="stSelectbox"] label {
-    font-size: 1rem !important;
-    font-weight: 600 !important;
-}
-
 [data-testid="stSidebar"] hr {
     border-color: #65836E !important;
+}
+
+/* Sidebar radio buttons */
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
 }
 
 /* Metric cards */
@@ -92,7 +91,7 @@ p, li {
     border-radius: 12px;
     padding: 22px 20px;
     min-height: 125px;
-    box-shadow: 0 2px 8px rgba(25, 65, 40, 0.04);
+    box-shadow: 0 2px 8px rgba(25,65,40,0.05);
 }
 
 [data-testid="stMetricLabel"] {
@@ -107,29 +106,21 @@ p, li {
     font-weight: 800 !important;
 }
 
-/* Forms */
+/* Prediction forms */
 [data-testid="stForm"] {
     background: #FFFFFF;
     border: 1px solid #DCE7DD;
     border-radius: 12px;
     padding: 28px;
+    box-shadow: 0 2px 8px rgba(25,65,40,0.04);
 }
 
 /* Input labels */
 .stSelectbox label,
-.stNumberInput label,
-.stTextInput label {
+.stNumberInput label {
     color: #254B31 !important;
     font-size: 0.98rem !important;
     font-weight: 650 !important;
-}
-
-/* Input fields */
-.stNumberInput input,
-.stTextInput input {
-    min-height: 42px;
-    border-radius: 7px;
-    font-size: 1rem;
 }
 
 /* Buttons */
@@ -150,7 +141,7 @@ p, li {
     border-color: #17452D;
 }
 
-/* Data tables */
+/* Tables */
 [data-testid="stDataFrame"] {
     border: 1px solid #DCE7DD;
     border-radius: 9px;
@@ -159,32 +150,16 @@ p, li {
 /* Alerts */
 [data-testid="stAlert"] {
     border-radius: 9px;
-    font-size: 1rem;
 }
 
-/* Charts */
-[data-testid="stVegaLiteChart"],
-[data-testid="stArrowVegaLiteChart"] {
-    background: #FFFFFF;
-    border: 1px solid #E2EAE3;
-    border-radius: 10px;
-    padding: 12px;
-}
-
-/* Divider */
+/* Dividers */
 hr {
     border-color: #DCE5DD !important;
     margin-top: 1.5rem;
     margin-bottom: 1.5rem;
 }
 
-/* Captions */
-[data-testid="stCaptionContainer"] {
-    color: #607266;
-    font-size: 0.9rem;
-}
-
-/* Responsive design */
+/* Responsive */
 @media (max-width: 768px) {
     .block-container {
         padding: 1rem;
@@ -199,7 +174,7 @@ hr {
     }
 }
 
-/* Hide Streamlit footer */
+/* Footer */
 footer {
     visibility: hidden;
 }
@@ -219,7 +194,7 @@ def load_data():
     csv_files = list(folder.rglob("*.csv"))
 
     if not csv_files:
-        return None, "No CSV file found in the project folder."
+        return None, "No CSV dataset found."
 
     required = {
         "State", "Season", "Crop_Type", "Soil_Type",
@@ -232,6 +207,7 @@ def load_data():
     }
 
     for file in csv_files:
+
         try:
             data = pd.read_csv(file)
             data.columns = data.columns.str.strip()
@@ -242,7 +218,7 @@ def load_data():
         except Exception:
             continue
 
-    return None, "No matching crop yield dataset was found."
+    return None, "No matching crop yield dataset found."
 
 
 df, dataset_name = load_data()
@@ -250,8 +226,8 @@ df, dataset_name = load_data()
 if df is None:
     st.error(dataset_name)
     st.info(
-        "Upload your crop yield CSV file to the same GitHub "
-        "repository as app.py or into a subfolder."
+        "Upload your crop yield CSV file to the GitHub "
+        "repository containing app.py."
     )
     st.stop()
 
@@ -261,7 +237,10 @@ if df is None:
 # =====================================================
 
 df = df.dropna(
-    subset=["Yield_ton_per_hectare", "Farmer_Profit_INR"]
+    subset=[
+        "Yield_ton_per_hectare",
+        "Farmer_Profit_INR"
+    ]
 ).copy()
 
 categorical_features = [
@@ -286,21 +265,13 @@ numeric_features = [
 # 5. SIDEBAR NAVIGATION
 # =====================================================
 
-st.sidebar.markdown("""
-<div style="text-align:center; padding:20px 5px;">
-    <div style="font-size:48px;">🌾</div>
-    <h2 style="color:white !important; margin:5px 0;">
-        AgriSmart
-    </h2>
-    <p style="color:#D9EBDD; font-size:13px;">
-        SMART AGRICULTURE SYSTEM
-    </p>
-</div>
-""", unsafe_allow_html=True)
+st.sidebar.title("🌾 AgriSmart")
+
+st.sidebar.caption("SMART AGRICULTURE SYSTEM")
 
 st.sidebar.divider()
 
-st.sidebar.markdown("### Navigation")
+st.sidebar.subheader("Navigation")
 
 page = st.sidebar.radio(
     "Select Dashboard",
@@ -315,55 +286,38 @@ page = st.sidebar.radio(
 
 st.sidebar.divider()
 
-st.sidebar.markdown("### Dataset Information")
-st.sidebar.success("Dataset loaded successfully")
+st.sidebar.subheader("Dataset Information")
+
+st.sidebar.success("Dataset Loaded Successfully")
 
 st.sidebar.caption(f"File: {dataset_name}")
-st.sidebar.caption(f"Total records: {len(df):,}")
+
+st.sidebar.caption(
+    f"Total Records: {len(df):,}"
+)
 
 st.sidebar.divider()
 
 st.sidebar.caption(
-    "AgriSmart | Smart Agriculture Dashboard"
+    "AgriSmart | Smart Agriculture"
 )
 
 
 # =====================================================
-# 6. MAIN HEADER
+# 6. MAIN HEADER - NATIVE STREAMLIT
 # =====================================================
 
-st.markdown("""
-<div style="
-    background:#17452D;
-    padding:30px 32px;
-    border-radius:12px;
-    margin-bottom:25px;
-">
-    <h1 style="
-        color:#FFFFFF !important;
-        font-size:34px !important;
-        margin:0;
-    ">
-        🌾 AgriSmart
-    </h1>
+st.title("🌾 AgriSmart")
 
-    <p style="
-        color:#FFFFFF;
-        font-size:18px;
-        margin:10px 0 0;
-    ">
-        Smart Agriculture Intelligence Dashboard
-    </p>
+st.subheader(
+    "Smart Agriculture Intelligence Dashboard"
+)
 
-    <p style="
-        color:#E0F0E3;
-        font-size:14px;
-        margin:8px 0 0;
-    ">
-        Crop Yield Forecasting | Farmer Profitability Prediction
-    </p>
-</div>
-""", unsafe_allow_html=True)
+st.caption(
+    "Crop Yield Forecasting | Farmer Profitability Prediction"
+)
+
+st.divider()
 
 
 # =====================================================
@@ -382,15 +336,20 @@ def train_model(target):
     y = pd.to_numeric(df[target], errors="coerce")
 
     for col in numeric_features:
-        X[col] = pd.to_numeric(X[col], errors="coerce")
+        X[col] = pd.to_numeric(
+            X[col],
+            errors="coerce"
+        )
 
     if target == "Farmer_Profit_INR":
+
         X["Yield_ton_per_hectare"] = pd.to_numeric(
             X["Yield_ton_per_hectare"],
             errors="coerce"
         )
 
     valid = y.notna()
+
     X = X.loc[valid]
     y = y.loc[valid]
 
@@ -408,16 +367,28 @@ def train_model(target):
         (
             "categorical",
             Pipeline([
-                ("imputer", SimpleImputer(strategy="most_frequent")),
-                ("encoder", OneHotEncoder(handle_unknown="ignore"))
+                (
+                    "imputer",
+                    SimpleImputer(strategy="most_frequent")
+                ),
+                (
+                    "encoder",
+                    OneHotEncoder(handle_unknown="ignore")
+                )
             ]),
             categorical
         ),
         (
             "numerical",
             Pipeline([
-                ("imputer", SimpleImputer(strategy="median")),
-                ("scaler", StandardScaler())
+                (
+                    "imputer",
+                    SimpleImputer(strategy="median")
+                ),
+                (
+                    "scaler",
+                    StandardScaler()
+                )
             ]),
             numerical
         )
@@ -451,7 +422,7 @@ def get_prediction_inputs(include_yield=False):
     st.markdown("### Crop and Farming Information")
 
     st.write(
-        "Enter the details below to generate your prediction."
+        "Enter the following details to generate your prediction."
     )
 
     col1, col2 = st.columns(2)
@@ -557,7 +528,7 @@ if page == "Dashboard Overview":
     st.header("Dashboard Overview")
 
     st.write(
-        "A summary of agricultural records, crop production "
+        "Summary of agricultural records, crop production "
         "and farmer profitability."
     )
 
@@ -585,9 +556,7 @@ if page == "Dashboard Overview":
 
     st.divider()
 
-    st.subheader("Crop Production Trends")
-
-    st.write("Average crop yield across different crop types.")
+    st.subheader("Crop-wise Average Yield")
 
     crop_yield = df.groupby("Crop_Type")[
         "Yield_ton_per_hectare"
@@ -607,7 +576,7 @@ if page == "Dashboard Overview":
 
     st.divider()
 
-    st.subheader("State-wise Farmer Profit")
+    st.subheader("State-wise Average Farmer Profit")
 
     state_profit = df.groupby("State")[
         "Farmer_Profit_INR"
@@ -617,7 +586,7 @@ if page == "Dashboard Overview":
 
     st.divider()
 
-    st.subheader("Season-wise Crop Yield")
+    st.subheader("Season-wise Average Crop Yield")
 
     season_yield = df.groupby("Season")[
         "Yield_ton_per_hectare"
@@ -645,12 +614,14 @@ elif page == "Crop Analysis":
     st.header("Crop Performance Analysis")
 
     st.write(
-        "Analyse crop performance across different states and seasons."
+        "Analyse crop performance across states and seasons."
     )
 
     crop_options = [
         "All Crops"
-    ] + sorted(df["Crop_Type"].dropna().unique().tolist())
+    ] + sorted(
+        df["Crop_Type"].dropna().unique().tolist()
+    )
 
     selected_crop = st.selectbox(
         "Select Crop",
@@ -661,6 +632,7 @@ elif page == "Crop Analysis":
     filtered = df.copy()
 
     if selected_crop != "All Crops":
+
         filtered = filtered[
             filtered["Crop_Type"] == selected_crop
         ]
@@ -704,15 +676,15 @@ elif page == "Crop Analysis":
 
 elif page == "Crop Yield Forecasting":
 
-    st.header("Crop Yield Forecasting")
+    st.header("🌱 Crop Yield Forecasting")
 
     st.write(
-        "Predict the expected crop yield using weather conditions "
+        "Estimate crop yield using weather conditions "
         "and farming information."
     )
 
     st.info(
-        "Complete the following details and click Forecast Crop Yield."
+        "Complete the details below and click Forecast Crop Yield."
     )
 
     with st.form("yield_forecast_form"):
@@ -763,15 +735,15 @@ elif page == "Crop Yield Forecasting":
 
 elif page == "Farmer Profitability Prediction":
 
-    st.header("Farmer Profitability Prediction")
+    st.header("💰 Farmer Profitability Prediction")
 
     st.write(
-        "Estimate farmer profit based on crop selection, "
-        "farming conditions and expected crop yield."
+        "Estimate farmer profit using crop, weather, "
+        "farming conditions and expected yield."
     )
 
     st.info(
-        "Enter the expected yield along with other farming details "
+        "Enter the expected yield and farming details "
         "to estimate profitability."
     )
 
@@ -823,28 +795,10 @@ elif page == "Farmer Profitability Prediction":
 
 st.divider()
 
-st.markdown("""
-<div style="
-    background:#173F2C;
-    padding:22px;
-    border-radius:10px;
-    text-align:center;
-">
-    <p style="
-        color:white;
-        font-size:16px;
-        font-weight:700;
-        margin:0;
-    ">
-        🌾 AgriSmart | Smart Agriculture Dashboard
-    </p>
+st.markdown(
+    "🌾 **AgriSmart | Smart Agriculture Dashboard**"
+)
 
-    <p style="
-        color:#DCEBDD;
-        font-size:13px;
-        margin:8px 0 0;
-    ">
-        Crop Yield Forecasting and Farmer Profitability Prediction
-    </p>
-</div>
-""", unsafe_allow_html=True)
+st.caption(
+    "Crop Yield Forecasting and Farmer Profitability Prediction"
+)
