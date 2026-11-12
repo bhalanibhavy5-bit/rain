@@ -73,11 +73,7 @@ p {
     color: #FFFFFF !important;
 }
 
-[data-testid="stSidebar"] hr {
-    border-color: #65836E !important;
-}
-
-/* Metrics */
+/* Metric cards */
 
 [data-testid="stMetric"] {
     background: #FFFFFF;
@@ -108,10 +104,9 @@ p {
     border: 1px solid #DCE7DD;
     border-radius: 12px;
     padding: 28px;
-    box-shadow: 0 2px 8px rgba(25,65,40,0.04);
 }
 
-/* Inputs */
+/* Input labels */
 
 .stSelectbox label,
 .stNumberInput label {
@@ -156,8 +151,6 @@ p {
 
 hr {
     border-color: #DCE5DD !important;
-    margin-top: 1.5rem;
-    margin-bottom: 1.5rem;
 }
 
 /* Responsive */
@@ -169,10 +162,6 @@ hr {
 
     [data-testid="stForm"] {
         padding: 15px;
-    }
-
-    h1 {
-        font-size: 1.7rem !important;
     }
 }
 
@@ -263,7 +252,7 @@ numeric_features = [
 
 
 # =====================================================
-# 5. CUSTOM GRAPH FUNCTIONS
+# 5. CUSTOM GRAPH FUNCTIONS - BLACK TEXT
 # =====================================================
 
 def create_bar_chart(data, title, color="#237A45"):
@@ -283,7 +272,14 @@ def create_bar_chart(data, title, color="#237A45"):
         marker_line_width=0,
         texttemplate="%{y:,.2f}",
         textposition="outside",
-        cliponaxis=False
+        textfont=dict(
+            color="#000000",
+            size=13
+        ),
+        cliponaxis=False,
+        hoverlabel=dict(
+            font=dict(color="#000000")
+        )
     )
 
     fig.update_layout(
@@ -292,23 +288,41 @@ def create_bar_chart(data, title, color="#237A45"):
         paper_bgcolor="white",
         font=dict(
             family="Arial",
-            size=13,
-            color="#263C2D"
+            size=14,
+            color="#000000"
         ),
         title_font=dict(
             size=19,
-            color="#17452D"
+            color="#000000"
         ),
         showlegend=False,
-        margin=dict(l=25, r=25, t=75, b=50),
+        margin=dict(l=25, r=25, t=75, b=60),
+
         xaxis=dict(
             showgrid=False,
-            title_font=dict(size=13)
+            tickfont=dict(
+                color="#000000",
+                size=13
+            ),
+            title_font=dict(
+                color="#000000",
+                size=14
+            ),
+            zeroline=False
         ),
+
         yaxis=dict(
             showgrid=True,
             gridcolor="#E8EEE9",
-            title_font=dict(size=13)
+            tickfont=dict(
+                color="#000000",
+                size=13
+            ),
+            title_font=dict(
+                color="#000000",
+                size=14
+            ),
+            zeroline=False
         )
     )
 
@@ -340,6 +354,9 @@ def create_line_chart(data, title, color="#239B9B"):
                 color="white",
                 width=2
             )
+        ),
+        hoverlabel=dict(
+            font=dict(color="#000000")
         )
     )
 
@@ -349,19 +366,41 @@ def create_line_chart(data, title, color="#239B9B"):
         paper_bgcolor="white",
         font=dict(
             family="Arial",
-            size=13,
-            color="#263C2D"
+            size=14,
+            color="#000000"
         ),
         title_font=dict(
             size=19,
-            color="#17452D"
+            color="#000000"
         ),
         showlegend=False,
-        margin=dict(l=25, r=25, t=75, b=50),
-        xaxis=dict(showgrid=False),
+        margin=dict(l=25, r=25, t=75, b=60),
+
+        xaxis=dict(
+            showgrid=False,
+            tickfont=dict(
+                color="#000000",
+                size=13
+            ),
+            title_font=dict(
+                color="#000000",
+                size=14
+            ),
+            zeroline=False
+        ),
+
         yaxis=dict(
             showgrid=True,
-            gridcolor="#E8EEE9"
+            gridcolor="#E8EEE9",
+            tickfont=dict(
+                color="#000000",
+                size=13
+            ),
+            title_font=dict(
+                color="#000000",
+                size=14
+            ),
+            zeroline=False
         )
     )
 
