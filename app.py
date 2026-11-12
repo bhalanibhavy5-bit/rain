@@ -15,7 +15,7 @@ from sklearn.ensemble import RandomForestRegressor
 # =====================================================
 
 st.set_page_config(
-    page_title="AgriSmart | Smart Agriculture",
+    page_title="AgriSmart Dashboard",
     page_icon="🌾",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -23,126 +23,185 @@ st.set_page_config(
 
 
 # =====================================================
-# 2. PROFESSIONAL UI DESIGN
+# 2. CLEAN AND READABLE UI DESIGN
 # =====================================================
 
 st.markdown("""
 <style>
 
+/* Overall background and content width */
 .stApp {
-    background-color: #F5F8F5;
+    background-color: #F7F9F7;
 }
 
 .block-container {
-    padding-top: 1.8rem;
-    padding-bottom: 2rem;
-    max-width: 1450px;
-}
-
-/* Sidebar */
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #153D2B, #245B3A);
-}
-
-[data-testid="stSidebar"] * {
-    color: white !important;
-}
-
-[data-testid="stSidebar"] hr {
-    border-color: #52745D !important;
+    max-width: 1500px;
+    padding: 2rem 2.5rem 3rem 2.5rem;
 }
 
 /* Main headings */
 h1 {
     color: #17452D !important;
+    font-size: 2.2rem !important;
     font-weight: 800 !important;
 }
 
-h2, h3 {
-    color: #245B3A !important;
+h2 {
+    color: #205B38 !important;
+    font-size: 1.65rem !important;
+    font-weight: 750 !important;
+}
+
+h3 {
+    color: #285C3C !important;
+    font-size: 1.3rem !important;
     font-weight: 700 !important;
+}
+
+p, li {
+    color: #35483A;
+    font-size: 1rem;
+    line-height: 1.65;
+}
+
+/* Sidebar */
+[data-testid="stSidebar"] {
+    background-color: #173F2C;
+    min-width: 270px;
+}
+
+[data-testid="stSidebar"] * {
+    color: #FFFFFF !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stRadio"] label,
+[data-testid="stSidebar"] [data-testid="stSelectbox"] label {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+}
+
+[data-testid="stSidebar"] hr {
+    border-color: #65836E !important;
 }
 
 /* Metric cards */
 [data-testid="stMetric"] {
-    background: white;
-    padding: 20px;
-    border: 1px solid #E1EBE2;
-    border-left: 5px solid #328451;
-    border-radius: 13px;
-    box-shadow: 0 3px 12px rgba(30, 70, 40, 0.06);
+    background: #FFFFFF;
+    border: 1px solid #DCE7DD;
+    border-top: 4px solid #328451;
+    border-radius: 12px;
+    padding: 22px 20px;
+    min-height: 125px;
+    box-shadow: 0 2px 8px rgba(25, 65, 40, 0.04);
 }
 
 [data-testid="stMetricLabel"] {
-    color: #54705C !important;
-    font-weight: 600;
+    color: #4B6251 !important;
+    font-size: 0.95rem !important;
+    font-weight: 650 !important;
 }
 
 [data-testid="stMetricValue"] {
     color: #17452D !important;
-    font-weight: 800;
+    font-size: 1.65rem !important;
+    font-weight: 800 !important;
 }
 
 /* Forms */
 [data-testid="stForm"] {
-    background: white;
-    padding: 25px;
-    border: 1px solid #E1EBE2;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(30, 70, 40, 0.05);
+    background: #FFFFFF;
+    border: 1px solid #DCE7DD;
+    border-radius: 12px;
+    padding: 28px;
 }
 
-/* Buttons */
-.stButton > button,
-.stFormSubmitButton > button {
-    background: linear-gradient(90deg, #1C603A, #328451);
-    color: white !important;
-    border: none;
-    border-radius: 9px;
-    padding: 0.65rem 1.2rem;
-    font-weight: 700;
-}
-
-.stButton > button:hover,
-.stFormSubmitButton > button:hover {
-    background: #17452D;
-    border: none;
+/* Input labels */
+.stSelectbox label,
+.stNumberInput label,
+.stTextInput label {
+    color: #254B31 !important;
+    font-size: 0.98rem !important;
+    font-weight: 650 !important;
 }
 
 /* Input fields */
 .stNumberInput input,
 .stTextInput input {
-    border-radius: 8px;
+    min-height: 42px;
+    border-radius: 7px;
+    font-size: 1rem;
 }
 
+/* Buttons */
+.stButton > button,
+.stFormSubmitButton > button {
+    background-color: #246B42;
+    color: #FFFFFF !important;
+    border: 1px solid #246B42;
+    border-radius: 8px;
+    min-height: 48px;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.stButton > button:hover,
+.stFormSubmitButton > button:hover {
+    background-color: #17452D;
+    border-color: #17452D;
+}
+
+/* Data tables */
 [data-testid="stDataFrame"] {
-    border: 1px solid #E1EBE2;
-    border-radius: 10px;
+    border: 1px solid #DCE7DD;
+    border-radius: 9px;
 }
 
 /* Alerts */
 [data-testid="stAlert"] {
+    border-radius: 9px;
+    font-size: 1rem;
+}
+
+/* Charts */
+[data-testid="stVegaLiteChart"],
+[data-testid="stArrowVegaLiteChart"] {
+    background: #FFFFFF;
+    border: 1px solid #E2EAE3;
     border-radius: 10px;
+    padding: 12px;
 }
 
 /* Divider */
 hr {
-    border-color: #DCE8DE !important;
+    border-color: #DCE5DD !important;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
-/* Footer */
-footer {
-    visibility: hidden;
+/* Captions */
+[data-testid="stCaptionContainer"] {
+    color: #607266;
+    font-size: 0.9rem;
 }
 
+/* Responsive design */
 @media (max-width: 768px) {
     .block-container {
         padding: 1rem;
     }
 
     [data-testid="stForm"] {
-        padding: 14px;
+        padding: 15px;
     }
+
+    h1 {
+        font-size: 1.7rem !important;
+    }
+}
+
+/* Hide Streamlit footer */
+footer {
+    visibility: hidden;
 }
 
 </style>
@@ -157,7 +216,6 @@ footer {
 def load_data():
 
     folder = Path(__file__).resolve().parent
-
     csv_files = list(folder.rglob("*.csv"))
 
     if not csv_files:
@@ -174,7 +232,6 @@ def load_data():
     }
 
     for file in csv_files:
-
         try:
             data = pd.read_csv(file)
             data.columns = data.columns.str.strip()
@@ -230,21 +287,23 @@ numeric_features = [
 # =====================================================
 
 st.sidebar.markdown("""
-<div style="text-align:center; padding:15px 5px 20px;">
-    <div style="font-size:45px;">🌾</div>
-    <h2 style="color:white !important; margin:0;">
+<div style="text-align:center; padding:20px 5px;">
+    <div style="font-size:48px;">🌾</div>
+    <h2 style="color:white !important; margin:5px 0;">
         AgriSmart
     </h2>
-    <p style="color:#D8EBDD; font-size:12px;">
+    <p style="color:#D9EBDD; font-size:13px;">
         SMART AGRICULTURE SYSTEM
     </p>
 </div>
 """, unsafe_allow_html=True)
 
-st.sidebar.markdown("---")
+st.sidebar.divider()
+
+st.sidebar.markdown("### Navigation")
 
 page = st.sidebar.radio(
-    "NAVIGATION",
+    "Select Dashboard",
     [
         "Dashboard Overview",
         "Crop Analysis",
@@ -254,31 +313,19 @@ page = st.sidebar.radio(
     index=0
 )
 
-st.sidebar.markdown("---")
+st.sidebar.divider()
 
-st.sidebar.markdown(
-    f"""
-    <div style="
-        background:rgba(255,255,255,0.10);
-        padding:12px;
-        border-radius:10px;
-        font-size:12px;
-    ">
-        <b>Dataset Status</b><br>
-        <span style="color:#B9E7C5;">● Successfully Loaded</span>
-        <br><br>
-        <b>Dataset:</b><br>{dataset_name}
-    </div>
-    """,
-    unsafe_allow_html=True
+st.sidebar.markdown("### Dataset Information")
+st.sidebar.success("Dataset loaded successfully")
+
+st.sidebar.caption(f"File: {dataset_name}")
+st.sidebar.caption(f"Total records: {len(df):,}")
+
+st.sidebar.divider()
+
+st.sidebar.caption(
+    "AgriSmart | Smart Agriculture Dashboard"
 )
-
-st.sidebar.markdown("""
-<div style="position:relative; padding-top:30px;
-color:#D8EBDD; font-size:11px; text-align:center;">
-AgriSmart | Smart Farming
-</div>
-""", unsafe_allow_html=True)
 
 
 # =====================================================
@@ -287,29 +334,31 @@ AgriSmart | Smart Farming
 
 st.markdown("""
 <div style="
-    background:linear-gradient(120deg,#153D2B,#287347);
-    padding:28px 32px;
-    border-radius:16px;
+    background:#17452D;
+    padding:30px 32px;
+    border-radius:12px;
     margin-bottom:25px;
 ">
     <h1 style="
-        color:white !important;
-        font-size:34px;
+        color:#FFFFFF !important;
+        font-size:34px !important;
         margin:0;
     ">
         🌾 AgriSmart
     </h1>
+
     <p style="
-        color:#D8EBDD;
-        font-size:16px;
-        margin:8px 0 0 0;
+        color:#FFFFFF;
+        font-size:18px;
+        margin:10px 0 0;
     ">
         Smart Agriculture Intelligence Dashboard
     </p>
+
     <p style="
-        color:#D8EBDD;
-        font-size:13px;
-        margin:8px 0 0 0;
+        color:#E0F0E3;
+        font-size:14px;
+        margin:8px 0 0;
     ">
         Crop Yield Forecasting | Farmer Profitability Prediction
     </p>
@@ -399,11 +448,17 @@ def get_prediction_inputs(include_yield=False):
 
     values = {}
 
-    st.markdown("#### 🌱 Crop and Farming Information")
+    st.markdown("### Crop and Farming Information")
+
+    st.write(
+        "Enter the details below to generate your prediction."
+    )
 
     col1, col2 = st.columns(2)
 
     with col1:
+
+        st.markdown("#### Crop Details")
 
         values["State"] = st.selectbox(
             "Select State",
@@ -436,6 +491,8 @@ def get_prediction_inputs(include_yield=False):
         )
 
     with col2:
+
+        st.markdown("#### Weather and Farming Inputs")
 
         values["Rainfall_mm"] = st.number_input(
             "Rainfall (mm)",
@@ -497,8 +554,12 @@ def get_prediction_inputs(include_yield=False):
 
 if page == "Dashboard Overview":
 
-    st.header("📊 Dashboard Overview")
-    st.caption("Agricultural data summary and performance indicators")
+    st.header("Dashboard Overview")
+
+    st.write(
+        "A summary of agricultural records, crop production "
+        "and farmer profitability."
+    )
 
     col1, col2, col3, col4 = st.columns(4)
 
@@ -522,55 +583,56 @@ if page == "Dashboard Overview":
         f"{int(df['Year'].min())}–{int(df['Year'].max())}"
     )
 
-    st.markdown("---")
+    st.divider()
 
-    left, right = st.columns(2)
+    st.subheader("Crop Production Trends")
 
-    with left:
-        st.subheader("🌾 Crop-wise Average Yield")
+    st.write("Average crop yield across different crop types.")
 
-        crop_yield = df.groupby("Crop_Type")[
-            "Yield_ton_per_hectare"
-        ].mean().sort_values(ascending=False)
+    crop_yield = df.groupby("Crop_Type")[
+        "Yield_ton_per_hectare"
+    ].mean().sort_values(ascending=False)
 
-        st.bar_chart(crop_yield)
+    st.bar_chart(crop_yield, height=350)
 
-    with right:
-        st.subheader("📈 Year-wise Average Yield")
+    st.divider()
 
-        yearly_yield = df.groupby("Year")[
-            "Yield_ton_per_hectare"
-        ].mean()
+    st.subheader("Year-wise Crop Yield")
 
-        st.line_chart(yearly_yield)
+    yearly_yield = df.groupby("Year")[
+        "Yield_ton_per_hectare"
+    ].mean()
 
-    left, right = st.columns(2)
+    st.line_chart(yearly_yield, height=350)
 
-    with left:
-        st.subheader("💰 State-wise Average Profit")
+    st.divider()
 
-        state_profit = df.groupby("State")[
-            "Farmer_Profit_INR"
-        ].mean().sort_values(ascending=False)
+    st.subheader("State-wise Farmer Profit")
 
-        st.bar_chart(state_profit)
+    state_profit = df.groupby("State")[
+        "Farmer_Profit_INR"
+    ].mean().sort_values(ascending=False)
 
-    with right:
-        st.subheader("🌦️ Season-wise Average Yield")
+    st.bar_chart(state_profit, height=350)
 
-        season_yield = df.groupby("Season")[
-            "Yield_ton_per_hectare"
-        ].mean()
+    st.divider()
 
-        st.bar_chart(season_yield)
+    st.subheader("Season-wise Crop Yield")
 
-    st.markdown("---")
+    season_yield = df.groupby("Season")[
+        "Yield_ton_per_hectare"
+    ].mean()
 
-    st.subheader("📋 Dataset Preview")
+    st.bar_chart(season_yield, height=300)
+
+    st.divider()
+
+    st.subheader("Dataset Preview")
 
     st.dataframe(
         df.head(10),
-        use_container_width=True
+        use_container_width=True,
+        height=350
     )
 
 
@@ -580,8 +642,11 @@ if page == "Dashboard Overview":
 
 elif page == "Crop Analysis":
 
-    st.header("🌱 Crop Performance Analysis")
-    st.caption("Explore crop performance across states and seasons")
+    st.header("Crop Performance Analysis")
+
+    st.write(
+        "Analyse crop performance across different states and seasons."
+    )
 
     crop_options = [
         "All Crops"
@@ -600,33 +665,36 @@ elif page == "Crop Analysis":
             filtered["Crop_Type"] == selected_crop
         ]
 
-    left, right = st.columns(2)
+    col1, col2 = st.columns(2)
 
-    with left:
+    with col1:
+
         st.subheader("State-wise Average Yield")
 
         state_yield = filtered.groupby("State")[
             "Yield_ton_per_hectare"
         ].mean().sort_values(ascending=False)
 
-        st.bar_chart(state_yield)
+        st.bar_chart(state_yield, height=350)
 
-    with right:
+    with col2:
+
         st.subheader("Season-wise Average Yield")
 
         season_yield = filtered.groupby("Season")[
             "Yield_ton_per_hectare"
         ].mean()
 
-        st.bar_chart(season_yield)
+        st.bar_chart(season_yield, height=350)
 
-    st.markdown("---")
+    st.divider()
 
-    st.subheader("Crop Records")
+    st.subheader("Filtered Crop Records")
 
     st.dataframe(
         filtered,
-        use_container_width=True
+        use_container_width=True,
+        height=400
     )
 
 
@@ -636,28 +704,33 @@ elif page == "Crop Analysis":
 
 elif page == "Crop Yield Forecasting":
 
-    st.header("🌾 Crop Yield Forecasting")
+    st.header("Crop Yield Forecasting")
 
-    st.caption(
-        "Estimate agricultural yield using weather and farming conditions."
+    st.write(
+        "Predict the expected crop yield using weather conditions "
+        "and farming information."
     )
 
-    with st.container(border=True):
+    st.info(
+        "Complete the following details and click Forecast Crop Yield."
+    )
 
-        with st.form("yield_forecast_form"):
+    with st.form("yield_forecast_form"):
 
-            inputs = get_prediction_inputs(
-                include_yield=False
-            )
+        inputs = get_prediction_inputs(
+            include_yield=False
+        )
 
-            submitted = st.form_submit_button(
-                "🌱 Forecast Crop Yield",
-                use_container_width=True
-            )
+        st.divider()
+
+        submitted = st.form_submit_button(
+            "Forecast Crop Yield",
+            use_container_width=True
+        )
 
     if submitted:
 
-        with st.spinner("Analysing farming conditions..."):
+        with st.spinner("Calculating crop yield..."):
 
             model, features = train_model(
                 "Yield_ton_per_hectare"
@@ -670,23 +743,14 @@ elif page == "Crop Yield Forecasting":
 
             prediction = model.predict(input_data)[0]
 
-        st.markdown("---")
+        st.divider()
 
-        st.subheader("📊 Crop Yield Forecast Result")
+        st.subheader("Crop Yield Forecast Result")
 
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.metric(
-                "Predicted Crop Yield",
-                f"{prediction:.2f} tons/hectare"
-            )
-
-        with col2:
-            st.metric(
-                "Selected Crop",
-                inputs["Crop_Type"]
-            )
+        st.metric(
+            "Predicted Crop Yield",
+            f"{prediction:.2f} tons/hectare"
+        )
 
         st.success(
             "Crop yield forecast generated successfully."
@@ -699,28 +763,34 @@ elif page == "Crop Yield Forecasting":
 
 elif page == "Farmer Profitability Prediction":
 
-    st.header("💰 Farmer Profitability Prediction")
+    st.header("Farmer Profitability Prediction")
 
-    st.caption(
-        "Estimate potential farmer profit using crop and farming information."
+    st.write(
+        "Estimate farmer profit based on crop selection, "
+        "farming conditions and expected crop yield."
     )
 
-    with st.container(border=True):
+    st.info(
+        "Enter the expected yield along with other farming details "
+        "to estimate profitability."
+    )
 
-        with st.form("profit_forecast_form"):
+    with st.form("profit_forecast_form"):
 
-            inputs = get_prediction_inputs(
-                include_yield=True
-            )
+        inputs = get_prediction_inputs(
+            include_yield=True
+        )
 
-            submitted = st.form_submit_button(
-                "💰 Predict Farmer Profit",
-                use_container_width=True
-            )
+        st.divider()
+
+        submitted = st.form_submit_button(
+            "Predict Farmer Profit",
+            use_container_width=True
+        )
 
     if submitted:
 
-        with st.spinner("Analysing farmer profitability..."):
+        with st.spinner("Calculating farmer profitability..."):
 
             model, features = train_model(
                 "Farmer_Profit_INR"
@@ -733,23 +803,14 @@ elif page == "Farmer Profitability Prediction":
 
             prediction = model.predict(input_data)[0]
 
-        st.markdown("---")
+        st.divider()
 
-        st.subheader("📊 Farmer Profitability Result")
+        st.subheader("Farmer Profitability Result")
 
-        col1, col2 = st.columns(2)
-
-        with col1:
-            st.metric(
-                "Estimated Farmer Profit",
-                f"₹{prediction:,.2f}"
-            )
-
-        with col2:
-            st.metric(
-                "Selected Crop",
-                inputs["Crop_Type"]
-            )
+        st.metric(
+            "Estimated Farmer Profit",
+            f"₹{prediction:,.2f}"
+        )
 
         st.success(
             "Farmer profitability prediction generated successfully."
@@ -760,26 +821,28 @@ elif page == "Farmer Profitability Prediction":
 # 13. FOOTER
 # =====================================================
 
-st.markdown("---")
+st.divider()
 
 st.markdown("""
 <div style="
-    background:#153D2B;
-    padding:18px;
-    border-radius:12px;
+    background:#173F2C;
+    padding:22px;
+    border-radius:10px;
     text-align:center;
 ">
     <p style="
         color:white;
+        font-size:16px;
         font-weight:700;
         margin:0;
     ">
         🌾 AgriSmart | Smart Agriculture Dashboard
     </p>
+
     <p style="
-        color:#D8EBDD;
-        font-size:12px;
-        margin:6px 0 0 0;
+        color:#DCEBDD;
+        font-size:13px;
+        margin:8px 0 0;
     ">
         Crop Yield Forecasting and Farmer Profitability Prediction
     </p>
