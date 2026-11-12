@@ -30,12 +30,31 @@ st.markdown("---")
 # 2. LOAD DATASET
 # ==================================================
 
+
+import os
+import streamlit as st
+import pandas as pd
+
 @st.cache_data
 def load_data():
-    return pd.read_csv("india_rainfall_crop_yield_2014_2024(2).csv")
 
+    file_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "india_rainfall_crop_yield_2014_2024(2).csv"
+    )
+
+    if not os.path.exists(file_path):
+        st.error(
+            "Dataset not found! Please upload "
+            "india_rainfall_crop_yield_2014_2024(2).csv "
+            "to the same GitHub folder as app.py."
+        )
+        st.stop()
+
+    return pd.read_csv(file_path)
 
 df = load_data()
+
 
 # Clean column names
 df.columns = df.columns.str.strip()
